@@ -9,6 +9,13 @@ what that means
 ----------
 With increasingly complex web applications, CSS and Javascript are becoming increasingly hard to manage. Less and Coffeescript are designed to make it easier to create these web applications. 
 
+You can learn more about LESS by going to : 
+- http://lesscss.org/
+
+You can learn more about Coffeescript by going to : 
+- http://coffeescript.org/
+
+
 What comes with it
 ----------
 As well as coffeescript and less compilers, we've included jquery and bootstrap. If you haven't created an assets folder, then these will automatically be copied to it the first time you view an ASP file containing the `<%=oWassel.call("assets")%>`command. 
