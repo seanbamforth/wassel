@@ -11,7 +11,7 @@ With increasingly complex web applications, CSS and Javascript are becoming incr
 
 What comes with it
 ----------
-As well as coffeescript and less compilers, we've included jquery and bootstrap. If you haven't created an assets folder, then these will automatically be copied to it the first time you view an ASP file containing the "<%=oWassel.call("assets")%>" command. 
+As well as coffeescript and less compilers, we've included jquery and bootstrap. If you haven't created an assets folder, then these will automatically be copied to it the first time you view an ASP file containing the `<%=oWassel.call("assets")%>`command. 
 
 Links for the included modules are as follows: 
 
@@ -28,22 +28,20 @@ How to use it
 
 3) Create a new ASP file, and add the line 
 
-'''
-<%=oWassel.call("assets")%>
-'''
+'<%=oWassel.call("assets")%>'
 
-to the <head> section of this file. 
+to the \<head\> section of this file. 
 
 3) Add the line "Use assets.pkg" to webapp.src as the first include inside your cWebApp object.
 
 4) Create a new registry key in 
-  "HKLM\Data Access Worldwide\Visual Dataflex\17.0\"
+  `HKLM\Data Access Worldwide\Visual Dataflex\17.0\`
 
 called
-  "Asset Compiler"
+  `Asset Compiler`
 
 with the value being the "compilers" folder of the "wassel" library 
-  e.g. C:\data\Visual DataFlex Projects\wassel\compilers
+  e.g. `C:\data\Visual DataFlex Projects\wassel\compilers`
 
 
 5) Compile and open your ASP file. 
