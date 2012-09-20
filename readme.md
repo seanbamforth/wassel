@@ -41,9 +41,9 @@ How to use it
 
 to the `<head>` section of this file. 
 
-3) Add the line `Use assets.pkg` to webapp.src as the first include inside your cWebApp object.
+4) Add the line `Use assets.pkg` to webapp.src as the first include inside your cWebApp object.
 
-4) Create a new registry key in 
+5) Create a new registry key in 
   `HKLM\Data Access Worldwide\Visual Dataflex\17.0\`
 
 called
@@ -53,9 +53,11 @@ with the value being the "compilers" folder of the "wassel" library
   e.g. `C:\data\Visual DataFlex Projects\wassel\compilers`
 
 
-5) Compile and open your ASP file. 
+6) Compile and open your ASP file. 
 
-6) That should be it, but it's new software, so it may not work...
+7) Add your .coffee and .less files to the assets\coffeescript & assets\less folders. Your .less files may need to be included as imports in the main.less file. 
+
+8) That should be it, but it's new software, so it may not work...
 
 
 Can you help
