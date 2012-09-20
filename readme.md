@@ -15,10 +15,10 @@ As well as coffeescript and less compilers, we've included jquery and bootstrap.
 
 Links for the included modules are as follows: 
 
-  https://github.com/alisey/CoffeeScript-Compiler-for-Windows
-  https://github.com/duncansmart/less.js-windows
-  http://twitter.github.com/bootstrap/
-  http://jquery.com/
+-  https://github.com/alisey/CoffeeScript-Compiler-for-Windows
+-  https://github.com/duncansmart/less.js-windows
+-  http://twitter.github.com/bootstrap/
+-  http://jquery.com/
 
 How to use it
 ----------
