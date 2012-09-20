@@ -28,11 +28,13 @@ How to use it
 
 3) Create a new ASP file, and add the line 
 
-'<%=oWassel.call("assets")%>'
+`
+<%=oWassel.call("assets")%>
+`
 
-to the \<head\> section of this file. 
+to the `<head>` section of this file. 
 
-3) Add the line "Use assets.pkg" to webapp.src as the first include inside your cWebApp object.
+3) Add the line `Use assets.pkg` to webapp.src as the first include inside your cWebApp object.
 
 4) Create a new registry key in 
   `HKLM\Data Access Worldwide\Visual Dataflex\17.0\`
