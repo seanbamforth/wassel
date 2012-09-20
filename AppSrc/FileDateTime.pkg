@@ -1,0 +1,291 @@
+// Package that defines functions to retrieve directory information. Part of the fileinformation
+// is conversion of filetime information.
+
+Define INVALID_HANDLE_VALUE For |CI-1
+Define INVALID_FILE_SIZE    For |CI$FFFFFFFF
+Define ERROR_NO_MORE_FILES  For |CI18
+
+Define Max_Path For |CI260
+Define MinChar  For |CI$80
+Define MaxChar  For |CI$7F
+Define MinShort For |CI$8000
+Define MaxShort For |CI$7FFF
+Define MinLong  For |CI$80000000
+Define MaxLong  For |CI$7FFFFFFF
+Define MaxByte  For |CI$FF
+Define MaxWord  For |CI$FFFF
+Define MaxDword For |CI$FFFFFFFF
+
+// Value                      Meaning
+//
+// FILE_ATTRIBUTE_ARCHIVE     The file or directory is an archive file or directory.
+//                            Applications use this flag to mark files for backup or removal.
+// FILE_ATTRIBUTE_COMPRESSED  The file or directory is compressed. For a file, this means
+//                            that all of the data in the file is compressed. For a
+//                            directory, this means that compression is the default for
+//                            newly created files and subdirectories.
+// FILE_ATTRIBUTE_DIRECTORY   The "file or directory" is a directory.
+// FILE_ATTRIBUTE_HIDDEN      The file or directory is hidden. It is not included in an
+//                            ordinary directory listing.
+// FILE_ATTRIBUTE_NORMAL      The file or directory has no other attributes set. This
+//                            attribute is valid only if used alone.
+// FILE_ATTRIBUTE_READONLY    The file or directory is read-only. Applications can read
+//                            the file but cannot write to it or delete it. In the case
+//                            of a directory, applications cannot delete it.
+// FILE_ATTRIBUTE_SYSTEM      The file or directory is part of, or is used exclusively by,
+//                            the operating system.
+
+Define FILE_ATTRIBUTE_READONLY   For |CI$00000001
+Define FILE_ATTRIBUTE_HIDDEN     For |CI$00000002
+Define FILE_ATTRIBUTE_SYSTEM     For |CI$00000004
+Define FILE_ATTRIBUTE_DIRECTORY  For |CI$00000010
+Define FILE_ATTRIBUTE_ARCHIVE    For |CI$00000020
+Define FILE_ATTRIBUTE_NORMAL     For |CI$00000080
+Define FILE_ATTRIBUTE_TEMPORARY  For |CI$00000100
+Define FILE_ATTRIBUTE_COMPRESSED For |CI$00000800
+
+// This function formats the time in a picture-string passed
+//
+// Picture  Meaning
+//
+//    h     Hours with no leading zero for single-digit hours; 12-hour clock
+//    hh    Hours with leading zero for single-digit hours; 12-hour clock
+//    H     Hours with no leading zero for single-digit hours; 24-hour clock
+//    HH    Hours with leading zero for single-digit hours; 24-hour clock
+//    m     Minutes with no leading zero for single-digit minutes
+//    mm    Minutes with leading zero for single-digit minutes
+//    s     Seconds with no leading zero for single-digit seconds
+//    ss    Seconds with leading zero for single-digit seconds
+//    t     One character time marker string, such as A or P
+//    tt    Multicharacter time marker string, such as AM or PM
+//
+// For example, to get the time string
+//    "11:29:40 PM"
+// use the following picture string:
+//    "hh':'mm':'ss tt"
+External_Function GetTimeFormat "GetTimeFormatA" Kernel32.Dll ;
+   Dword LCID Dword dwFlags Pointer lpsSystemTime Pointer lpFormat Pointer lpTimeStr Integer cchTime Returns Integer
+
+// This function returns the time for the computer. It is the time of the clock shown in the taskbar of windows
+External_Function GetLocalTime "GetLocalTime" Kernel32.Dll ;
+   Pointer lpsSystemTime Returns Integer
+
+// This function returns the time in GreenWhich currently based on the local time and the timezone information
+External_Function GetSystemTime "GetSystemTime" Kernel32.Dll ;
+   Pointer lpsSystemTime Returns Integer
+
+// This function formats the date in a picture-string passed
+//
+// Picture  Meaning
+//
+//    d     Day of month as digits with no leading zero for single-digit days.
+//    dd    Day of month as digits with leading zero for single-digit days.
+//    ddd   Day of week as a three-letter abbreviation. The function uses the LOCALE_SABBREVDAYNAME value
+//          associated with the specified locale.
+//    dddd  Day of week as its full name. The function uses the LOCALE_SDAYNAME value associated with the
+//          specified locale.
+//    M     Month as digits with no leading zero for single-digit months.
+//    MM    Month as digits with leading zero for single-digit months.
+//    MMM   Month as a three-letter abbreviation. The function uses the LOCALE_SABBREVMONTHNAME value
+//          associated with the specified locale.
+//    MMMM  Month as its full name. The function uses the LOCALE_SMONTHNAME value associated with the
+//          specified locale.
+//    y     Year as last two digits, but with no leading zero for years less than 10.
+//    yy    Year as last two digits, but with leading zero for years less than 10.
+//    yyyy  Year represented by full four digits.
+//    gg    Period/era string. The function uses the CAL_SERASTRING value associated with the specified
+//          locale. This element is ignored if the date to be formatted does not have an associated era
+//          or period string.
+// For example, to get the date string
+//    "Wed, Aug 31 94"
+// use the following picture string:
+//    "ddd',' MMM dd yy"
+External_Function GetDateFormat "GetDateFormatA" Kernel32.Dll ;
+   Dword LCID Dword dwFlags Pointer lpsSystemTime Pointer lpFormat Pointer lpDateStr Integer cchDate Returns Integer
+
+Define LOCALE_NOUSEROVERRIDE   For |CI$80000000 // do not use user overrides
+Define TIME_NOMINUTESORSECONDS For |CI$00000001 // do not use minutes or seconds
+Define TIME_NOSECONDS          For |CI$00000002 // do not use seconds
+Define TIME_NOTIMEMARKER       For |CI$00000004 // do not use time marker
+Define TIME_FORCE24HOURFORMAT  For |CI$00000008 // always use 24 hour format
+
+//
+//  Date Flags for GetDateFormatW.
+//
+Define DATE_SHORTDATE        For |CI$00000001  // use short date picture
+Define DATE_LONGDATE         For |CI$00000002  // use long date picture
+Define DATE_USE_ALT_CALENDAR For |CI$00000004  // use alternate calendar (if any)
+
+// Structure to store the systemtime
+Struct tSystemTime
+   UShort wYear
+   UShort wMonth
+   UShort wDayOfWeek
+   UShort wDay
+   UShort wHour
+   UShort wMinute
+   UShort wSecond
+   UShort wMilliseconds
+End_Struct
+
+// Structure to store the filetime
+Struct tFileTime
+   Dword dwLowDateTime
+   Dword dwHighDateTime
+End_Struct
+
+// Structure to store a filename entry
+Struct tWin32_Find_Data
+   Dword dwFileAttributes
+   Dword ftCreationLowDateTime
+   Dword ftCreationHighDateTime
+   Dword ftLastAccessLowDateTime
+   Dword ftLastAccessHighDateTime
+   Dword ftLastWriteLowDateTime
+   Dword ftLastWriteHighDateTime
+   Dword nFileSizeHigh
+   Dword nFileSizeLow
+   Dword dwReserved0
+   Dword dwReserved1
+   Char[Max_Path] cFileName
+   Char[14] cAlternateFileName
+End_Struct
+
+// Structure to hold a filename and it's datetime members
+Struct tFileDateTime
+    String sFileName
+    DateTime dtCreated
+    DateTime dtLastAccessed
+    DateTime dtLastWrite
+End_Struct
+
+// lpFileTime     :pointer to file time to convert
+// lpSystemTime   :pointer to structure to receive system time
+External_Function FileTimeToSystemTime "FileTimeToSystemTime" Kernel32.Dll ;
+   Pointer lpFileTime Pointer lpSystemTime Returns Integer
+
+External_Function FileTimeToLocalFileTime "FileTimeToLocalFileTime" Kernel32.Dll ;
+   Pointer lpFileTime Pointer lpSystemTime Returns Integer
+
+// lpFileName      :address of name of file to search for
+// lpFindFileData  :address of returned information
+External_Function FindFirstFile "FindFirstFileA" Kernel32.Dll ;
+   Pointer lpFileName Pointer lpFindFileData Returns Handle
+
+// hFindFile       :handle of search
+// lpFindFileData  :address of structure for data on found file
+External_Function FindNextFile "FindNextFileA" Kernel32.Dll ;
+   Handle hFindFile Pointer lpFindFileData Returns Integer
+
+// hFindFile       :file search handle
+External_Function FindClose "FindClose" Kernel32.Dll ;
+   Handle hFindFile Returns Integer
+
+// Global function to convert two numeric datetime into a DataFlex DateTime variable
+Function ConvertDateTimeToSystemDateTime Global Dword dwLowDateTime Dword dwHighDateTime Boolean bConvertToLocalFileTime Returns DateTime
+    String sFormattedTime sFormattedDate
+    Integer iSuccess iDataLength
+    tSystemTime iSystemTime
+    tFileTime iFileTime iLocalFileTime
+    DateTime dtResult
+    
+    Move dwLowDateTime To iFileTime.dwLowDateTime
+    Move dwHighDateTime To iFileTime.dwHighDateTime
+    
+    If (bConvertToLocalFileTime) Begin
+        Move (FileTimeToLocalFileTime (AddressOf (iFileTime), AddressOf (iLocalFileTime))) To iSuccess
+        If (iSuccess <> 0) Begin
+            Move iLocalFileTime To iFileTime
+        End        
+    End    
+    
+    Move (FileTimeToSystemTime (AddressOf (iFileTime), AddressOf (iSystemTime))) To iSuccess
+    If (iSuccess <> 0) Begin
+        Move (Repeat (Character (0), 255)) To sFormattedTime
+        Move (GetTimeFormat (Locale_User_Default, 0, AddressOf (iSystemTime), 0, AddressOf (sFormattedTime), 255)) To iDataLength
+        
+        Move (Repeat (Character (0), 255)) To sFormattedDate
+        Move (GetDateFormat (Locale_User_Default, 0, AddressOf (iSystemTime), 0, AddressOf (sFormattedDate), 255)) To iDataLength
+        
+        Move (Cstring (sFormattedDate) * Cstring (sFormattedTime)) To dtResult
+    End
+    
+    Function_Return dtResult
+End_Function // ConvertDateTimeToSystemDateTime
+        
+// Global function to enumerate a folder. The function returns an array of files with their datetime members        
+Function FileDateTime Global String sFilePath Boolean bUseLocalFileTime Returns tFileDateTime[]
+    Handle hFindFile
+    Integer iVoid iRetval iFile
+    tWin32_Find_Data Win32_Find_Data
+    DateTime dtFileTime
+    tFileDateTime[] FileDateTime
+    
+    Move (FindFirstFile (AddressOf (sFilePath), AddressOf (Win32_Find_Data))) To hFindFile
+    If (hFindFile <> INVALID_HANDLE_VALUE) Begin
+        Repeat
+            If ((Win32_Find_Data.dwFileAttributes iAnd FILE_ATTRIBUTE_DIRECTORY) = 0) Begin
+                Move (AddressOf (Win32_Find_Data.cFileName)) To FileDateTime[iFile].sFileName
+                Move (ConvertDateTimeToSystemDateTime (Win32_Find_Data.ftCreationLowDateTime, Win32_Find_Data.ftCreationHighDateTime, bUseLocalFileTime)) To FileDateTime[iFile].dtCreated
+                Move (ConvertDateTimeToSystemDateTime (Win32_Find_Data.ftLastAccessLowDateTime, Win32_Find_Data.ftLastAccessHighDateTime, bUseLocalFileTime)) To FileDateTime[iFile].dtLastAccessed
+                Move (ConvertDateTimeToSystemDateTime (Win32_Find_Data.ftLastWriteLowDateTime, Win32_Find_Data.ftLastWriteHighDateTime, bUseLocalFileTime)) To FileDateTime[iFile].dtLastWrite
+                
+                Increment iFile
+            End
+            
+            Move (FindNextFile (hFindFile, AddressOf (Win32_Find_Data))) To iRetval
+            // If iRetval = false the function call fails but GetLastError fails to tell me if
+            // this was because we do not find any files anymore.
+        Until (Not (iRetval))
+        
+        Move (FindClose (hFindFile)) To iVoid
+    End
+    
+    Function_Return FileDateTime
+End_Function // FileDateTimeiFileDateTime
+
+Function dtTo4 Global Integer iValue Returns String 
+    String sRet 
+    Move ("0000"+(String(iValue))) to sRet
+    Function_Return (Right(sRet,4))    
+End_Function
+
+Function RecursiveMaxModifiedTime Global String sFolder String sCurrentMax Returns String 
+    Handle hFindFile
+    Integer iVoid iRetval iFile
+    tWin32_Find_Data Win32_Find_Data
+    DateTime dtChanged
+    String sNewFolder
+    String sSearch 
+    String sFile 
+    String sTest 
+    
+    Move (sFolder+ "*.*") to sSearch
+    Move (FindFirstFile (AddressOf (sSearch), AddressOf (Win32_Find_Data))) to hFindFile
+    If (hFindFile <> INVALID_HANDLE_VALUE) Begin
+        Repeat
+            If ((Win32_Find_Data.dwFileAttributes iand FILE_ATTRIBUTE_DIRECTORY) <> 0) Begin
+                Move (AddressOf (Win32_Find_Data.cFileName)) to sNewFolder
+                If ((sNewFolder<>".") and (sNewFolder<>"..")) Begin 
+                    Move (RecursiveMaxModifiedTime(sFolder+sNewFolder+"\",sCurrentMax)) to sCurrentMax
+                End
+            End
+            Else Begin 
+                Move (AddressOf (Win32_Find_Data.cFileName)) to sFile 
+                
+                Move (ConvertDateTimeToSystemDateTime (Win32_Find_Data.ftLastWriteLowDateTime, Win32_Find_Data.ftLastWriteHighDateTime, False )) to dtChanged
+                Move "test_dt:" to sTest 
+                Append sTest (dtTo4(DateGetYear(dtChanged))) ":"
+                Append sTest (dtTo4(DateGetMonth(dtChanged))) ":"
+                Append sTest (dtTo4(DateGetDay(dtChanged))) "::"
+                Append sTest (dtTo4(DateGetHour(dtChanged))) ":"
+                Append sTest (dtTo4(DateGetMinute(dtChanged))) ":"
+                Append sTest (dtTo4(DateGetSecond(dtChanged)))
+                If (sTest > sCurrentMax) Move sTest to sCurrentMax 
+            End
+            Move (FindNextFile (hFindFile, AddressOf (Win32_Find_Data))) to iRetval
+        Until (not (iRetval))
+        Move (FindClose (hFindFile)) to iVoid
+    End
+    Function_Return sCurrentMax
+End_Function

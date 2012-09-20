@@ -1,0 +1,13 @@
+Use Windows.pkg
+Use cHtmlHelp.pkg
+Use cApplication.pkg
+
+Object oHtmlHelp is a cHtmlHelp
+End_Object
+
+Object oApplication is a cApplication
+    Set pbPreserveEnvironment to False
+    Set peHelpType to htHtmlHelp
+End_Object
+
+Send Info_Box "Hello World" "Visual DataFlex Basic Project"

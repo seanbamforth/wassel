@@ -1,0 +1,40 @@
+[Workspace]
+CurrentProject=wassel.src
+Location=C:\data\Visual DataFlex Projects\wassel\IdeSrc\Owner_Studio.dsk
+[TabWindows]
+GroupCount=1
+HorizontalGroups=1
+[TabGroup0]
+GroupSize=40
+SelectedTab=2
+[Window0]
+Filename=Workspace Dashboard
+ViewType=101
+Top=22
+Left=2
+Bottom=628
+Right=906
+TabIndex=0
+TabGroup=0
+[Window1]
+Filename=C:\data\Visual DataFlex Projects\wassel\AppSrc\wassel.src
+ViewType=1
+Top=22
+Left=2
+Bottom=628
+Right=906
+CursorLine=13
+CursorColumn=0
+TabIndex=1
+TabGroup=0
+[Window2]
+Filename=C:\data\Visual DataFlex Projects\wassel\AppSrc\assets.pkg
+ViewType=1
+Top=22
+Left=2
+Bottom=628
+Right=906
+CursorLine=0
+CursorColumn=0
+TabIndex=2
+TabGroup=0

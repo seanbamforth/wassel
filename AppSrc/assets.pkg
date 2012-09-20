@@ -1,0 +1,346 @@
+Use cRegistry.pkg
+Use vWin32fh.pkg
+Use FileDateTime.pkg
+
+Struct tVDFD_WINAPI_PROCESS_INFORMATION
+Handle hProcess
+Handle hThread
+DWord dwProcessId
+DWord dwThreadId
+End_Struct
+
+Struct tVDFD_WINAPI_STARTUPINFO
+DWord cb
+Pointer lpReserved
+Pointer lpDesktop
+Pointer lpTitle
+DWord dwX
+DWord dwY
+DWord dwXSize
+DWord dwYSize
+DWord dwXCountChars
+DWord dwYCountChars
+DWord dwFillAttribute
+DWord dwFlags
+DWord wShowWindow // Word
+DWord cbReserved2 // Word
+Pointer lpReserved2
+Handle hStdInput
+Handle hStdOutput
+Handle hStdError
+End_Struct
+
+External_Function VDFD_WINAPI_CreateProcess "CreateProcessA" kernel32.dll ;
+Pointer lpApplicationName ;
+Pointer lpCommandLine ;
+Pointer lpProcessAttributes ;
+Pointer lpThreadAttributes ;
+Boolean bInheritHandles ;
+DWord dwCreationFlags ;
+Pointer lpEnvironment ;
+Pointer lpCurrentDirectory ;
+Pointer lpStartupInfo ;
+Pointer lpProcessInformation ;
+Returns Integer
+
+External_Function WaitForSingleObject "WaitForSingleObject" kernel32.dll ;
+    Handle hProcess ;
+    DWord iWaitTime ;
+Returns Integer
+    
+Object oAssets is a cObject 
+    Property Boolean pisDevelopment (False)
+    Property String psCompileFolder
+    Property String psUnique "notset"
+    
+    Procedure setup_environment 
+        String sKey sCompileFolder
+        Handle hoRegistry
+        Boolean bExists bOpened
+        
+        Set psCompileFolder to ""
+        Set pisDevelopment to False 
+
+        Get Create (RefClass (cRegistry)) to hoRegistry
+        Set phRootKey of hoRegistry to HKEY_LOCAL_MACHINE
+        Set pfAccessRights of hoRegistry to KEY_READ
+        Get KeyExists of hoRegistry "SOFTWARE\Wow6432Node" to bExists
+        If (bExists) Begin
+            Move ("SOFTWARE\Wow6432Node\Data Access Worldwide\Visual DataFlex\" + SysConf (SYSCONF_DATAFLEX_REV)) to sKey
+        End
+        Else Begin
+            Move ("SOFTWARE\Data Access Worldwide\Visual DataFlex\" + SysConf (SYSCONF_DATAFLEX_REV)) to sKey
+        End    
+        Get KeyExists of hoRegistry sKey to bExists
+        If (bExists) Begin
+            Get OpenKey of hoRegistry sKey to bOpened
+            If (bOpened) Begin
+                Get ValueExists of hoRegistry "Asset Compiler" to bExists
+                If (bExists) Begin
+                    Get ReadString of hoRegistry "Asset Compiler" to sCompileFolder
+                    If ((Right(sCompileFolder,1))<>"\") Append sCompileFolder "\"
+                    Set psCompileFolder to sCompileFolder
+                    Set pisDevelopment to True 
+                End
+                Send CloseKey of hoRegistry
+            End
+        End
+        
+        Send Destroy of hoRegistry
+        
+        If (pisDevelopment(Self)) Begin
+            Boolean isFileExists
+            File_Exist (sCompileFolder+"coffeescript\coffee.exe")  isFileExists
+            If (not(isFileExists)) Begin 
+                Set psCompileFolder to ""
+                Set pisDevelopment to False 
+            End
+        End 
+    End_Procedure
+
+    Function compiler_folder Returns String 
+        Function_Return (psCompileFolder(Self))
+    End_Function
+    
+    Function is_development  Returns Boolean 
+        Function_Return (pisDevelopment(Self))
+    End_Function
+    
+    Function is_production Returns Boolean
+        Function_Return (not(pisDevelopment(Self))) 
+    End_Function
+
+    Function hello Returns String 
+        If (is_development(Self)) Function_Return ("Hello - Development : " + (psCompileFolder(Self)))
+        If (is_production(Self)) Function_Return "Hello - production"
+    End_Function
+    
+    Function apphtml_folder Returns String 
+        String sFolder
+        Move (psAppHtmlPath(phoWorkspace(oApplication))) to sFolder
+        If ((right(sFolder,1))<>"\") Append sFolder "\"
+        Function_Return sFolder 
+    End_Function
+    
+    Function appHTML_subfolder String sType Returns String 
+        Function_Return ( (apphtml_folder(Self)) + sType + "\")
+    End_Function
+    
+    Function assets_folder Returns String 
+        String sFolder 
+        Move (lowercase(apphtml_folder(Self))) to sFolder 
+        Move (Replaces("\apphtml\",sFolder,"\assets\")) to sFolder 
+        Function_Return sFolder 
+    End_Function
+    
+    Function assets_subfolder String sType Returns String 
+        Function_Return ( (assets_folder(Self)) + sType + "\")
+    End_Function
+
+    Procedure doCommand String sCommand 
+        String sWassel 
+        Integer iTmp 
+        
+        Get psCompileFolder to sWassel         
+        Move (Replaces("{wassel}\",sCommand,sWassel)) to sCommand
+        Move (Replaces("{assets}\",sCommand, (assets_folder(Self)) )) to sCommand
+        Move (Replaces("{apphtml}\",sCommand, (apphtml_folder(Self)) )) to sCommand
+        Move (Replaces("{unique}",sCommand, (psUnique(Self)) )) to sCommand
+        
+        //Send vShellExecute "OPEN" "cmd.exe" ("/C "+sCommand) ""
+        //Send Info_Box "wait"
+        //Runprogram Wait sCommand 
+
+        Integer iRetVal iVoid
+        String sApp
+        Pointer pApp pProcessInfo pStartInfo
+        tVDFD_WINAPI_PROCESS_INFORMATION tProcessInfo
+        tVDFD_WINAPI_STARTUPINFO tStartInfo
+        
+        #Replace STARTF_USESHOWWINDOW 1
+        Move STARTF_USESHOWWINDOW to tStartInfo.dwFlags
+        Move (sCommand + (Character(0))) to sApp
+        Move (AddressOf(sApp)) to pApp
+        Move (OemToAnsi(pApp,pApp)) to iVoid
+        Move (AddressOf(tStartInfo)) to pStartInfo
+        Move (AddressOf(tProcessInfo)) to pProcessInfo
+        
+        Move (VDFD_WINAPI_CreateProcess(0,pApp,0,0,0,0,0,0,pStartInfo,pProcessInfo)) to iRetVal
+        Move (WaitForSingleObject(tProcessInfo.hProcess, 20000)) to iTmp 
+    End_Procedure
+    
+    Procedure create_default_assets 
+        Send doCommand 'xcopy "{wassel}\defaults\*.*" "{assets}\" /s' 
+    End_Procedure
+    
+    Procedure CreateLessFiles String sUniq 
+        Set psUnique to ("assets-"+sUniq)
+        Send doCommand 'cscript //nologo "{wassel}\less\lessc.wsf" "{assets}\less\main.less" "{apphtml}\css\{unique}.css" -compress' 
+    End_Procedure
+    
+    Procedure CreateJavascript String sUniq
+        String sTempFolder
+        Integer iTmp 
+        Integer iChannel 
+        String sSearch
+        Boolean isFinished
+        String sFile 
+        String sBase
+        String sCommand
+        
+        Move (assets_subfolder(Self,"temp")) to sTempFolder
+        If (not(vFolderExists(sTempFolder))) Move (vCreateDirectory(sTempFolder)) to iTmp 
+        
+        Move '"{wassel}\coffeescript\coffee" -c "{assets}\coffeescript\{file}" -o "{assets}\temp"' to sCommand
+
+        Move (Seq_New_Channel()) to iChannel 
+        Move (assets_subfolder(oAssets,"coffeescript")) to sBase
+        Move (sBase+"*.coffee") to sSearch 
+        Direct_Input channel iChannel ("DIR: " + sSearch)
+        Repeat 
+            Readln sFile 
+            Move (SeqEof) to isFinished
+            If ((pos ( ".coffee",(Lowercase(sfile))))<>0) Begin 
+                Move (Replaces("{file}",sCommand,sFile)) to sFile 
+                Send doCommand sFile 
+            End
+        Until (isFinished)
+        Send Seq_Release_Channel iChannel 
+
+        //merge all files in this folder & all files in the js folder...
+        Send doCommand 'cmd /C type "{assets}\js\*.js" > "{apphtml}\js\{unique}.js"'
+        Send doCommand 'cmd /C type "{assets}\temp\*.js" >> "{apphtml}\js\{unique}.js"'
+        
+        //delete folder
+        //todo - split this up into smaller procedures
+        Move (Seq_New_Channel()) to iChannel 
+        Move (assets_subfolder(oAssets,"temp")) to sBase
+        Move (sBase+"*.js") to sSearch 
+        Direct_Input channel iChannel ("DIR: " + sSearch)
+        Repeat 
+            Readln sFile 
+            Move (SeqEof) to isFinished
+            If ((pos ( ".js",(Lowercase(sfile))))<>0) Begin 
+                Move (vDeleteFile(sBase+sFile)) to iTmp
+            End
+        Until (isFinished)
+        Send Seq_Release_Channel iChannel 
+        Move (vRemoveDirectory(sTempFolder)) to iTmp 
+    End_Procedure
+
+    Procedure delete_old_assets String sType 
+        Integer iChannel 
+        String sSearch
+        Boolean isFinished
+        String sFile 
+        String sBase
+        Integer iTmp 
+        
+        Move (Seq_New_Channel()) to iChannel 
+        
+        Move (appHTML_subfolder(oAssets,sType)) to sBase
+        Move (sBase+"*."+sType) to sSearch 
+        Direct_Input channel iChannel ("DIR: " + sSearch)
+        Repeat 
+            Readln sFile 
+            Move (SeqEof) to isFinished
+            If ((pos ( "assets-",(Lowercase(sfile))))=1) Begin 
+                Move (vDeleteFile(sBase+sFile)) to iTmp 
+            End
+        Until (isFinished)
+        Send Seq_Release_Channel iChannel 
+    End_Procedure
+    
+    Function files_changed Returns Boolean 
+        String sAssetChangeDate
+        String sConfigFile
+        String sWorkspc
+        String sCompare 
+        Integer hoIniFile
+        Boolean isChanged 
+        
+        Move (RecursiveMaxModifiedTime( (assets_folder(Self)) ,"")) to sAssetChangeDate
+        Move (False) to isChanged
+
+        Move ("config.ws") to sConfigFile
+        Get_File_Path sConfigFile to sConfigFile
+        If (sConfigFile<>"") Begin
+            Get Create U_cIniFile to hoIniFile 
+            Set psFilename of hoIniFile to sConfigFile
+            
+            Get ReadString of hoIniFile "Assets" "Asset-Time" "" to sCompare
+            If (sCompare < sAssetChangeDate) Begin 
+                Send WriteString to hoIniFile "Assets" "Asset-Time" sAssetChangeDate
+                Move True to isChanged
+            End
+            
+            Send Destroy of hoIniFile // destroy dynaically created inifile
+        End 
+        
+        Function_Return isChanged 
+    End_Function
+    
+    Procedure generate_assets 
+        Integer iFileName
+        String sUniq
+
+        If (is_production(Self)) Procedure_Return
+        If (not(files_changed(Self))) Procedure_Return
+        
+        If (not(vFolderExists(assets_folder(Self)))) Send create_default_assets
+
+        Send delete_old_assets "js"
+        Send delete_old_assets "css"
+        
+        Move (Random(1000000)) to sUniq //should use sha1 or something...
+        Send CreateLessFiles sUniq
+        Send CreateJavascript sUniq
+    End_Procedure
+    
+End_Object
+Send setup_environment to oAssets 
+
+Object oWassel is a cWebBusinessProcess
+    Function files_for String sType String sWrapper Returns String 
+        Integer iChannel 
+        String sSearch
+        Boolean isFinished
+        String sAssets
+        String sFile 
+        
+        Move (Seq_New_Channel()) to iChannel 
+        Move "" to sAssets 
+        
+        Move (appHTML_subfolder(oAssets,sType)) to sSearch
+        Append sSearch "*."  sType
+        Direct_Input channel iChannel ("DIR: " + sSearch)
+        Repeat 
+            Readln sFile 
+            Move (SeqEof) to isFinished
+            If ((pos ( "assets-",(Lowercase(sfile))))=1) Begin 
+                Append sAssets (Replaces("{filename}",sWrapper,sFile))
+            End
+        Until (isFinished)
+        Send Seq_Release_Channel iChannel 
+        
+        Function_Return sAssets 
+    End_Function
+    
+    Function AssetList Returns String 
+        String sReturn 
+        String sLessFolder
+        
+        Move "" to sReturn 
+        Append sReturn (files_for(Self,"js",  '<script src="./js/{filename}"></script>'))
+        Append sReturn (files_for(Self,"css", '<link href="./css/{filename}" media="all" rel="stylesheet" type="text/css" />'))
+        Function_Return sReturn 
+    End_Function
+    
+    Function Assets Returns String 
+        If (is_development(oAssets)) Send generate_assets to oAssets 
+        Function_Return (AssetList(Self))
+    End_Function
+    
+    Send RegisterInterface get_assets "assets" "returns string" "Returns an Asset list"
+End_Object
+
